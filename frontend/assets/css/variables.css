@@ -14,20 +14,18 @@
   --color-text:        #f1f5f9;
   --color-text-muted:  #94a3b8;
   --color-text-dim:    #64748b;
-  /* Input specific colors */
-  --color-input-bg:    #0f1724;
-  --color-input-border: #1f2d45;
-  --color-input-focus: #22c55e;
-  --color-input-text:  #ffffff;  /* ADD THIS */
-  --color-input-placeholder: #64748b;  /* ADD THIS */
-  --color-label:       #e2e8f0;  /* ADD THIS */
 
-  /* Surfaces */
+  /* Input specific colors */
+  --color-input-bg:          #0f1724;
+  --color-input-border:      #1f2d45;
+  --color-input-focus:       #22c55e;
+  --color-input-text:        #ffffff;
+  --color-input-placeholder: #64748b;
+  --color-label:             #e2e8f0;
+
+  /* Surfaces */  /* FIX #8: removed duplicate --color-input-* declarations that were here */
   --color-card:        #111827;
   --color-card-hover:  #1a2235;
-  --color-input-bg:    #0f1724;
-  --color-input-border: #1f2d45;
-  --color-input-focus: #22c55e;
 
   /* Sidebar */
   --sidebar-width:     240px;
@@ -70,5 +68,7 @@
   --color-card-hover:  #f8fafc;
   --color-input-bg:    #ffffff;
   --color-input-border: #cbd5e1;
+  --color-input-text:  #0f172a;
+  --color-label:       #1e293b;
   --sidebar-bg:        #1e293b;
 }

@@ -2,7 +2,6 @@
  * Global application state management
  */
 const FlowSmart = {
-  // State
   state: {
     isAuthenticated: false,
     user: null,
@@ -12,21 +11,15 @@ const FlowSmart = {
     isLoading: false,
   },
 
-  // Event listeners
   listeners: new Map(),
 
-  /**
-   * Initialize the application
-   */
   async init() {
-    // Check for stored theme
     const savedTheme = localStorage.getItem('flowsmart-theme');
     if (savedTheme) {
       this.state.theme = savedTheme;
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
 
-    // Check authentication status
     const userData = await this.checkAuth();
     
     if (userData) {
@@ -34,30 +27,25 @@ const FlowSmart = {
       this.state.user = userData.user;
       this.state.currency = userData.user.currency || 'UGX';
       
-      // Check if we're on auth pages
       const currentPath = window.location.pathname;
       if (currentPath.includes('login.html') || currentPath.includes('register.html')) {
         window.location.href = '/';
         return;
       }
       
-      // Initialize the main app
       this.initApp();
     } else {
-      // Redirect to login if not on auth page
       const currentPath = window.location.pathname;
       if (!currentPath.includes('login.html') && !currentPath.includes('register.html')) {
         window.location.href = '/login.html';
         return;
       }
       
-      // Initialize auth page
       if (typeof AuthPage !== 'undefined') {
         AuthPage.init();
       }
     }
 
-    // Remove initial loader
     const loader = document.querySelector('.initial-loader');
     if (loader) {
       loader.style.opacity = '0';
@@ -65,24 +53,23 @@ const FlowSmart = {
     }
   },
 
-  /**
-   * Check authentication status
-   */
   async checkAuth() {
     try {
+      // FIX #1: `api` is now loaded before state.js so this won't crash
       const response = await fetch(`${api.baseURL}/auth/refresh-token`, {
         method: 'POST',
         credentials: 'include',
       });
       
       if (response.ok) {
-        // Try to get user profile from a lightweight endpoint
         const statusResponse = await api.getSubscriptionStatus().catch(() => null);
         return {
           user: {
+            // FIX #6: added name field so Topbar doesn't crash on user.name.charAt(0)
+            name: statusResponse?.data?.name || 'User',
             plan: statusResponse?.data?.plan || 'free',
             planExpiresAt: statusResponse?.data?.planExpiresAt || null,
-            currency: 'UGX',
+            currency: statusResponse?.data?.currency || 'UGX',
           }
         };
       }
@@ -92,14 +79,10 @@ const FlowSmart = {
     }
   },
 
-  /**
-   * Initialize the main application layout
-   */
   initApp() {
     const app = document.getElementById('app');
     if (!app) return;
 
-    // Build the main layout
     app.innerHTML = `
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
@@ -152,37 +135,25 @@ const FlowSmart = {
       <div class="toast-container" id="toastContainer"></div>
     `;
 
-    // Initialize components
     Sidebar.init();
     Topbar.init();
     Router.init();
-    
-    // Event listeners
     this.setupEventListeners();
   },
 
-  /**
-   * Setup global event listeners
-   */
   setupEventListeners() {
-    // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
       themeToggle.addEventListener('click', () => this.toggleTheme());
     }
 
-    // Currency toggle
     document.querySelectorAll('.currency-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const currency = btn.dataset.currency;
-        this.setCurrency(currency);
+        this.setCurrency(btn.dataset.currency);
       });
     });
   },
 
-  /**
-   * Toggle between dark and light theme
-   */
   toggleTheme() {
     const newTheme = this.state.theme === 'dark' ? 'light' : 'dark';
     this.state.theme = newTheme;
@@ -191,14 +162,10 @@ const FlowSmart = {
     this.emit('themeChanged', newTheme);
   },
 
-  /**
-   * Set currency
-   */
   setCurrency(currency) {
     if (this.state.currency === currency) return;
     this.state.currency = currency;
     
-    // Update UI
     document.querySelectorAll('.currency-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.currency === currency);
     });
@@ -206,9 +173,6 @@ const FlowSmart = {
     this.emit('currencyChanged', currency);
   },
 
-  /**
-   * Logout
-   */
   async logout() {
     try {
       await api.logout();
@@ -220,9 +184,6 @@ const FlowSmart = {
     window.location.href = '/login.html';
   },
 
-  /**
-   * Subscribe to state changes
-   */
   on(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
@@ -230,9 +191,6 @@ const FlowSmart = {
     this.listeners.get(event).push(callback);
   },
 
-  /**
-   * Emit event
-   */
   emit(event, data) {
     const callbacks = this.listeners.get(event) || [];
     callbacks.forEach(cb => cb(data));

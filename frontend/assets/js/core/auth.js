@@ -1,9 +1,9 @@
 /**
  * Authentication page logic
+ * FIX #4: Removed the duplicate orphaned auth.js - this is the only auth file.
  */
 const AuthPage = {
   init() {
-    // Check if already logged in
     if (FlowSmart.state.isAuthenticated) {
       window.location.href = '/';
       return;
@@ -26,7 +26,6 @@ const AuthPage = {
       await this.handleLogin();
     });
 
-    // Demo login
     const demoBtn = document.getElementById('demoLoginBtn');
     if (demoBtn) {
       demoBtn.addEventListener('click', () => {
@@ -35,21 +34,14 @@ const AuthPage = {
       });
     }
 
-    // Toggle password visibility
-    document.querySelectorAll('.toggle-password').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const input = btn.parentElement.querySelector('input');
-        const type = input.type === 'password' ? 'text' : 'password';
-        input.type = type;
-      });
-    });
+    // FIX #4: Password toggle now correctly scoped here instead of a loose orphan script
+    this.setupPasswordToggles();
   },
 
   initRegister() {
     const form = document.getElementById('registerForm');
     if (!form) return;
 
-    // Password strength checker
     const passwordInput = document.getElementById('password');
     if (passwordInput) {
       passwordInput.addEventListener('input', () => {
@@ -61,16 +53,46 @@ const AuthPage = {
       e.preventDefault();
       await this.handleRegister();
     });
+
+    this.setupPasswordToggles();
+  },
+
+  setupPasswordToggles() {
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrapper = this.closest('.password-input-wrapper');
+        const input = wrapper.querySelector('input');
+        
+        if (input.type === 'password') {
+          input.type = 'text';
+          this.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          `;
+        } else {
+          input.type = 'password';
+          this.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          `;
+        }
+      });
+    });
   },
 
   async handleLogin() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     
-    // Clear errors
     document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
     
-    // Validate
     let hasError = false;
     if (!email) {
       document.getElementById('emailError').textContent = 'Email is required';
@@ -82,7 +104,6 @@ const AuthPage = {
     }
     if (hasError) return;
 
-    // Show loader
     const btn = document.getElementById('loginBtn');
     btn.querySelector('.btn-text').classList.add('hidden');
     btn.querySelector('.btn-loader').classList.remove('hidden');
@@ -94,9 +115,7 @@ const AuthPage = {
       if (response.success) {
         FlowSmart.state.isAuthenticated = true;
         FlowSmart.state.user = response.user;
-        FlowSmart.state.currency = response.user.currency;
-        
-        // Redirect to dashboard
+        FlowSmart.state.currency = response.user.currency || 'UGX';
         window.location.href = '/';
       }
     } catch (error) {
@@ -115,10 +134,8 @@ const AuthPage = {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     
-    // Clear errors
     document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
     
-    // Validate
     let hasError = false;
     if (!name) {
       document.getElementById('nameError').textContent = 'Full name is required';
@@ -149,13 +166,8 @@ const AuthPage = {
       if (response.success) {
         FlowSmart.state.isAuthenticated = true;
         FlowSmart.state.user = response.user;
-        
         Toast.show('Account created successfully!', 'success');
-        
-        // Redirect to dashboard
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        setTimeout(() => { window.location.href = '/'; }, 1000);
       }
     } catch (error) {
       Toast.show(error.message, 'error');

@@ -7,15 +7,12 @@ const DashboardPage = {
     if (!content) return;
 
     content.innerHTML = `
-      <!-- Alert Banner -->
       <div id="alertBanner" class="hidden"></div>
 
-      <!-- KPI Cards -->
       <div class="kpi-grid" id="kpiGrid">
         ${Array(4).fill('<div class="kpi-card skeleton" style="height: 120px;"></div>').join('')}
       </div>
 
-      <!-- Charts Row -->
       <div class="charts-row">
         <div class="card chart-card">
           <div class="card-header">
@@ -41,7 +38,6 @@ const DashboardPage = {
         </div>
       </div>
 
-      <!-- AI Insights Panel -->
       <div class="card insights-panel" id="insightsPanel">
         <div class="card-header">
           <h3 class="card-title">🤖 AI Insights</h3>
@@ -60,12 +56,10 @@ const DashboardPage = {
       </div>
     `;
 
-    // Load data
     await this.loadDashboard();
 
-    // Event listeners
     document.querySelectorAll('.chart-toggles .btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         document.querySelectorAll('.chart-toggles .btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this.updateCashFlowChart(parseInt(btn.dataset.period));
@@ -83,9 +77,9 @@ const DashboardPage = {
       if (summaryResponse.success) {
         this.renderKPIs(summaryResponse.data);
         this.renderAlerts(summaryResponse.data);
+        this.renderIncomeExpenseChart(summaryResponse.data);
       }
 
-      // Load charts
       await this.updateCashFlowChart(30);
       await this.loadInsights();
     } catch (error) {
@@ -98,17 +92,26 @@ const DashboardPage = {
     const kpiGrid = document.getElementById('kpiGrid');
     if (!kpiGrid) return;
 
+    // FIX #7: Use real percentage change from API data instead of hardcoded '+12.5%'
+    const revenueChange = data.revenuePrevious
+      ? Utils.getPercentChange(data.totalRevenue, data.revenuePrevious)
+      : null;
+    const revenueChangeLabel = revenueChange !== null
+      ? `${revenueChange >= 0 ? '+' : ''}${revenueChange.toFixed(1)}% vs last period`
+      : 'No previous data';
+    const revenueTrend = revenueChange === null ? 'neutral' : revenueChange >= 0 ? 'positive' : 'negative';
+
     const kpis = [
       {
         label: 'Total Revenue (30d)',
         value: Utils.formatCurrency(data.totalRevenue),
-        change: '+12.5%',
-        trend: 'positive',
+        change: revenueChangeLabel,
+        trend: revenueTrend,
       },
       {
         label: 'Total Expenses (30d)',
         value: Utils.formatCurrency(data.totalExpenses),
-        change: data.netCashFlow < 0 ? 'Watch' : 'OK',
+        change: data.netCashFlow < 0 ? 'Watch spending' : 'On track',
         trend: data.netCashFlow < 0 ? 'negative' : 'neutral',
       },
       {
@@ -119,9 +122,13 @@ const DashboardPage = {
       },
       {
         label: 'Cash Runway',
-        value: `${data.cashRunway} days`,
-        change: data.cashRunway < 14 ? 'Critical' : data.cashRunway < 30 ? 'Low' : 'Healthy',
-        trend: data.cashRunway < 14 ? 'negative' : data.cashRunway < 30 ? 'neutral' : 'positive',
+        value: `${data.cashRunway ?? '—'} days`,
+        change: !data.cashRunway ? 'No data'
+          : data.cashRunway < 14 ? 'Critical'
+          : data.cashRunway < 30 ? 'Low' : 'Healthy',
+        trend: !data.cashRunway ? 'neutral'
+          : data.cashRunway < 14 ? 'negative'
+          : data.cashRunway < 30 ? 'neutral' : 'positive',
       },
     ];
 
@@ -141,49 +148,56 @@ const DashboardPage = {
     const alerts = [];
     
     if (data.cashRunway < 14) {
-      alerts.push({
-        type: 'danger',
-        message: `⚠️ Critical: Only ${data.cashRunway} days of cash runway remaining. Take immediate action.`,
-      });
+      alerts.push({ type: 'danger', message: `⚠️ Critical: Only ${data.cashRunway} days of cash runway remaining.` });
     } else if (data.cashRunway < 30) {
-      alerts.push({
-        type: 'warning',
-        message: `⚡ Low cash runway: ${data.cashRunway} days. Consider reducing expenses.`,
-      });
+      alerts.push({ type: 'warning', message: `⚡ Low cash runway: ${data.cashRunway} days. Consider reducing expenses.` });
     }
 
     if (data.netCashFlow < 0) {
-      alerts.push({
-        type: 'warning',
-        message: '📉 Negative cash flow detected. Expenses exceed income this month.',
-      });
+      alerts.push({ type: 'warning', message: '📉 Negative cash flow detected. Expenses exceed income this month.' });
     }
 
     if (alerts.length > 0) {
-      banner.innerHTML = alerts.map(a => `
-        <div class="alert alert-${a.type}">${a.message}</div>
-      `).join('');
+      banner.innerHTML = alerts.map(a => `<div class="alert alert-${a.type}">${a.message}</div>`).join('');
       banner.classList.remove('hidden');
     } else {
       banner.classList.add('hidden');
     }
   },
 
+  renderIncomeExpenseChart(data) {
+    if (!data.monthlyBreakdown) return;
+    const months = data.monthlyBreakdown.map(m => m.month);
+    const chartData = {
+      labels: months,
+      datasets: [
+        {
+          label: 'Income',
+          data: data.monthlyBreakdown.map(m => m.income),
+          backgroundColor: 'rgba(34, 197, 94, 0.7)',
+        },
+        {
+          label: 'Expenses',
+          data: data.monthlyBreakdown.map(m => m.expenses),
+          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+        },
+      ],
+    };
+    ChartHelper.createBarChart('incomeExpenseChart', chartData);
+  },
+
   async updateCashFlowChart(period) {
     try {
-      // Fetch transactions for the period
       const params = {
         limit: 200,
         from: dayjs().subtract(period, 'day').toISOString(),
         to: new Date().toISOString(),
       };
       const response = await api.getTransactions(params);
-      
       if (!response.success) return;
 
       const transactions = response.data.transactions;
       
-      // Group by date
       const dailyData = {};
       transactions.forEach(t => {
         const date = dayjs(t.date).format('MMM D');
@@ -192,7 +206,7 @@ const DashboardPage = {
         else dailyData[date].expense += t.amount;
       });
 
-      const sortedDates = Object.keys(dailyData).sort((a, b) => 
+      const sortedDates = Object.keys(dailyData).sort((a, b) =>
         dayjs(a).isAfter(dayjs(b)) ? 1 : -1
       );
 
