@@ -1,0 +1,81 @@
+/* ============ TRANSACTIONS ============ */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.page-actions-right {
+  display: flex;
+  gap: 8px;
+}
+
+.search-box input {
+  width: 240px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 20px;
+}
+
+.pagination .btn.active {
+  background: var(--color-primary);
+  color: #000;
+}
+
+.pagination-ellipsis {
+  color: var(--color-text-muted);
+  padding: 0 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-muted);
+}
+
+.empty-state p {
+  margin-bottom: 16px;
+  font-size: 1.125rem;
+}
+
+/* CSV Import */
+.csv-import {
+  text-align: center;
+}
+
+.csv-dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.csv-dropzone:hover {
+  border-color: var(--color-primary);
+}
+
+.csv-dropzone svg {
+  margin: 0 auto 16px;
+  color: var(--color-text-muted);
+}
+
+.csv-dropzone p {
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}

@@ -1,0 +1,157 @@
+/* ============ AUTH PAGES ============ */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--color-bg);
+}
+
+.auth-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.auth-logo {
+  height: 40px;
+  margin: 0 auto 20px;
+}
+
+.auth-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--color-text);
+}
+
+.auth-header p {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  margin: 8px 0 4px;
+}
+
+.forgot-password {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.forgot-password:hover {
+  color: var(--color-primary-dim);
+  text-decoration: underline;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.auth-footer a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.auth-separator {
+  display: flex;
+  align-items: center;
+  margin: 24px 0;
+  color: var(--color-text-dim);
+  font-size: 0.8rem;
+}
+
+.auth-separator::before,
+.auth-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.auth-separator span {
+  padding: 0 16px;
+}
+
+.demo-info {
+  text-align: center;
+}
+
+.demo-info p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+/* Password strength indicator */
+.password-strength {
+  margin-top: 10px;
+}
+
+.strength-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+  transition: all var(--transition-fast);
+  margin-bottom: 6px;
+  width: 0;
+  max-width: 100%;
+}
+
+.strength-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Button styles */
+.btn {
+  font-weight: 600;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #000000;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dim);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.btn-secondary {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-primary);
+  background: var(--color-card-hover);
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FlowSmart - AI-Powered SME Finance & Cash Flow Manager for East African Businesses">
+  <meta name="theme-color" content="#0b0f1a">
+  <title>FlowSmart - Smart Finance Management</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/reset.css">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/pages/dashboard.css">
+  <link rel="stylesheet" href="assets/css/pages/transactions.css">
+  <link rel="stylesheet" href="assets/css/pages/forecast.css">
+  <link rel="stylesheet" href="assets/css/pages/reports.css">
+  <link rel="stylesheet" href="assets/css/pages/invoices.css">
+  <link rel="stylesheet" href="assets/css/pages/settings.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Initial loading state -->
+    <div class="initial-loader">
+      <div class="loader-spinner"></div>
+      <p>Loading FlowSmart...</p>
+    </div>
+  </div>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+  
+  <!-- Application Scripts -->
+  <script src="assets/js/core/state.js"></script>
+  <script src="assets/js/core/utils.js"></script>
+  <script src="assets/js/core/api.js"></script>
+  <script src="assets/js/core/auth.js"></script>
+  <script src="assets/js/core/router.js"></script>
+  
+  <script src="assets/js/components/toast.js"></script>
+  <script src="assets/js/components/modal.js"></script>
+  <script src="assets/js/components/skeleton.js"></script>
+  <script src="assets/js/components/chart.js"></script>
+  <script src="assets/js/components/sidebar.js"></script>
+  <script src="assets/js/components/topbar.js"></script>
+  
+  <script src="assets/js/pages/auth.js"></script>
+  <script src="assets/js/pages/dashboard.js"></script>
+  <script src="assets/js/pages/transactions.js"></script>
+  <script src="assets/js/pages/forecast.js"></script>
+  <script src="assets/js/pages/reports.js"></script>
+  <script src="assets/js/pages/invoices.js"></script>
+  <script src="assets/js/pages/settings.js"></script>
+  
+  <script>
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', () => {
+      FlowSmart.init();
+    });
+  </script>
+</body>
+</html>
