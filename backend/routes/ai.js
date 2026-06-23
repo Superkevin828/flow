@@ -3,7 +3,7 @@ const AIController = require('../controllers/aiController');
 const auth = require('../middleware/auth');
 const checkPlan = require('../middleware/plan');
 const rateLimiter = require('../middleware/rateLimiter');
-
+//ok
 const router = express.Router();
 
 router.use(auth);
