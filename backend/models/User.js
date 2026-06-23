@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
+    unique: true,  // This already creates an index
     lowercase: true,
     trim: true
   },
@@ -74,7 +74,10 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-userSchema.index({ email: 1 });
+// Remove this duplicate index - unique: true already creates it
+// userSchema.index({ email: 1 });
+
+// Keep this one if you need it for queries
 userSchema.index({ plan: 1 });
 
 module.exports = mongoose.model('User', userSchema);
