@@ -22,7 +22,7 @@ app.use(helmet());
 // FIX: Accept both localhost:8080 (npx serve) and localhost:3000 (dev server) locally
 const allowedOrigins = process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL]
-  : ['http://localhost:8080', 'http://localhost:3000', 'http://127.0.0.1:8080', 'http://127.0.0.1:3000'];
+  : ['http://localhost:8080', 'http://localhost:3000', 'http://0.0.0.0:8080', 'https://flow-ehj.pages.dev/login'];
 
 app.use(cors({
   origin: (origin, callback) => {
