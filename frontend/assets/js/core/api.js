@@ -1,238 +1,134 @@
 /**
  * FlowSmart API Client
- * Handles all HTTP requests to the backend
+ * Uses CONFIG.API_BASE_URL from config.js — change it there, not here.
  */
 class APIClient {
   constructor() {
-    this.baseURL = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5000/api' 
-      : 'http://localhost:5000/api';
+    // Single source of truth: assets/js/core/config.js
+    this.baseURL = CONFIG.API_BASE_URL;
   }
 
-  /**
-   * Make API request with automatic token refresh
-   */
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    
     const config = {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      credentials: 'include', // Send cookies
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      credentials: 'include',
     };
 
+    let response;
     try {
-      let response = await fetch(url, config);
+      response = await fetch(url, config);
+    } catch (err) {
+      throw new APIError(
+        `Cannot reach server at ${this.baseURL}. Is the backend running?`,
+        0
+      );
+    }
 
-      // Handle token expiration
-      if (response.status === 401) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        if (errorData.code === 'TOKEN_EXPIRED') {
-          // Try to refresh token
-          const refreshed = await this.refreshToken();
-          if (refreshed) {
-            // Retry the original request
-            response = await fetch(url, config);
-          } else {
-            // Redirect to login
-            window.location.href = '/login.html';
-            throw new Error('Session expired. Please login again.');
-          }
+    // Auto-refresh on 401
+    if (response.status === 401) {
+      const refreshed = await this._refreshToken();
+      if (refreshed) {
+        try { response = await fetch(url, config); } catch {
+          throw new APIError('Session expired. Please log in again.', 401);
         }
+      } else {
+        window.location.href = 'login.html';
+        throw new APIError('Session expired. Please log in again.', 401);
       }
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({
-          message: 'An unexpected error occurred'
-        }));
-        throw new APIError(error.message, response.status, error);
-      }
-
-      // Handle no content
-      if (response.status === 204) {
-        return { success: true };
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (error instanceof APIError) throw error;
-      
-      // Network error
-      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-        throw new APIError('Network error. Please check your connection.', 0);
-      }
-      
-      throw new APIError(error.message || 'Request failed', 500);
     }
+
+    if (!response.ok) {
+      let errData = {};
+      try { errData = await response.json(); } catch {}
+      throw new APIError(
+        errData.message || `Server error (${response.status})`,
+        response.status,
+        errData
+      );
+    }
+
+    if (response.status === 204) return { success: true };
+    return response.json();
   }
 
-  /**
-   * Refresh the access token
-   */
-  async refreshToken() {
+  async _refreshToken() {
     try {
-      const response = await fetch(`${this.baseURL}/auth/refresh-token`, {
-        method: 'POST',
-        credentials: 'include',
+      const r = await fetch(`${this.baseURL}/auth/refresh-token`, {
+        method: 'POST', credentials: 'include',
       });
-      return response.ok;
-    } catch {
-      return false;
-    }
+      return r.ok;
+    } catch { return false; }
   }
 
-  // Auth
-  async login(email, password) {
-    return this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+  // ── Auth ──────────────────────────────────────────────────────────────
+  login(email, password) {
+    return this.request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
   }
-
-  async register(data) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  register(data) {
+    return this.request('/auth/register', { method: 'POST', body: JSON.stringify(data) });
   }
-
-  async logout() {
+  logout() {
     return this.request('/auth/logout', { method: 'POST' });
   }
-
-  async updateProfile(data) {
-    return this.request('/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  updateProfile(data) {
+    return this.request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) });
+  }
+  changePassword(currentPassword, newPassword) {
+    return this.request('/auth/change-password', { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) });
   }
 
-  async changePassword(currentPassword, newPassword) {
-    return this.request('/auth/change-password', {
-      method: 'PUT',
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
+  // ── Transactions ──────────────────────────────────────────────────────
+  getTransactions(params = {}) {
+    return this.request(`/transactions?${new URLSearchParams(params)}`);
+  }
+  createTransaction(data) {
+    return this.request('/transactions', { method: 'POST', body: JSON.stringify(data) });
+  }
+  updateTransaction(id, data) {
+    return this.request(`/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  deleteTransaction(id) {
+    return this.request(`/transactions/${id}`, { method: 'DELETE' });
+  }
+  importTransactions(transactions) {
+    return this.request('/transactions/import', { method: 'POST', body: JSON.stringify({ transactions }) });
   }
 
-  // Transactions
-  async getTransactions(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/transactions?${query}`);
-  }
+  // ── Reports ───────────────────────────────────────────────────────────
+  getSummary()            { return this.request('/reports/summary'); }
+  getMonthlyReport(month) { return this.request(`/reports/monthly?month=${month}`); }
+  getAnnualReport(year)   { return this.request(`/reports/annual?year=${year}`); }
 
-  async createTransaction(data) {
-    return this.request('/transactions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
+  // ── AI ────────────────────────────────────────────────────────────────
+  generateForecast() { return this.request('/ai/forecast',  { method: 'POST' }); }
+  generateInsights() { return this.request('/ai/insights',  { method: 'POST' }); }
 
-  async updateTransaction(id, data) {
-    return this.request(`/transactions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  // ── Invoices ──────────────────────────────────────────────────────────
+  getInvoices(params = {}) {
+    return this.request(`/invoices?${new URLSearchParams(params)}`);
   }
+  createInvoice(data)     { return this.request('/invoices', { method: 'POST', body: JSON.stringify(data) }); }
+  updateInvoice(id, data) { return this.request(`/invoices/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+  deleteInvoice(id)       { return this.request(`/invoices/${id}`, { method: 'DELETE' }); }
+  markInvoicePaid(id)     { return this.request(`/invoices/${id}/mark-paid`, { method: 'POST' }); }
+  sendInvoice(id)         { return this.request(`/invoices/${id}/send`, { method: 'POST' }); }
 
-  async deleteTransaction(id) {
-    return this.request(`/transactions/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async importTransactions(transactions) {
-    return this.request('/transactions/import', {
-      method: 'POST',
-      body: JSON.stringify({ transactions }),
-    });
-  }
-
-  // Reports
-  async getSummary() {
-    return this.request('/reports/summary');
-  }
-
-  async getMonthlyReport(month) {
-    return this.request(`/reports/monthly?month=${month}`);
-  }
-
-  async getAnnualReport(year) {
-    return this.request(`/reports/annual?year=${year}`);
-  }
-
-  // AI
-  async generateForecast() {
-    return this.request('/ai/forecast', { method: 'POST' });
-  }
-
-  async generateInsights() {
-    return this.request('/ai/insights', { method: 'POST' });
-  }
-
-  // Invoices
-  async getInvoices(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/invoices?${query}`);
-  }
-
-  async createInvoice(data) {
-    return this.request('/invoices', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateInvoice(id, data) {
-    return this.request(`/invoices/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteInvoice(id) {
-    return this.request(`/invoices/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async markInvoicePaid(id) {
-    return this.request(`/invoices/${id}/mark-paid`, {
-      method: 'POST',
-    });
-  }
-
-  async sendInvoice(id) {
-    return this.request(`/invoices/${id}/send`, {
-      method: 'POST',
-    });
-  }
-
-  // Subscriptions
-  async getSubscriptionStatus() {
-    return this.request('/subscriptions/status');
-  }
-
-  async initiateSubscription(billingCycle) {
-    return this.request('/subscriptions/initiate', {
-      method: 'POST',
-      body: JSON.stringify({ billingCycle }),
-    });
+  // ── Subscriptions ─────────────────────────────────────────────────────
+  getSubscriptionStatus() { return this.request('/subscriptions/status'); }
+  initiateSubscription(cycle) {
+    return this.request('/subscriptions/initiate', { method: 'POST', body: JSON.stringify({ billingCycle: cycle }) });
   }
 }
 
-// Custom API Error class
 class APIError extends Error {
   constructor(message, status, data = {}) {
     super(message);
-    this.name = 'APIError';
+    this.name   = 'APIError';
     this.status = status;
-    this.data = data;
+    this.data   = data;
   }
 }
 
-// Create singleton instance
 const api = new APIClient();
