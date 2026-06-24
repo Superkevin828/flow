@@ -6,7 +6,7 @@ class APIClient {
   constructor() {
     this.baseURL = window.location.hostname === 'localhost' 
       ? 'http://localhost:5000/api' 
-      : 'https://flowsmart-api.onrender.com/api';
+      : 'http://localhost:5000/api';
   }
 
   /**

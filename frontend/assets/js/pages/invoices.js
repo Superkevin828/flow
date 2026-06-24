@@ -14,7 +14,6 @@ const InvoicesPage = {
         </div>
         <button class="btn btn-primary" id="createInvoiceBtn">+ New Invoice</button>
       </div>
-
       <div id="invoicesList">
         <div class="skeleton" style="height:400px; border-radius:var(--radius-lg);"></div>
       </div>
@@ -53,7 +52,7 @@ const InvoicesPage = {
                   <tr>
                     <td>#${inv.invoiceNumber}</td>
                     <td>${inv.clientName}</td>
-                    <td>${Utils.formatCurrency(inv.total)}</td>
+                    <td>${Utils.formatCurrency(inv.totalAmount ?? inv.total)}</td>
                     <td>${Utils.formatDate(inv.dueDate)}</td>
                     <td>
                       <span class="badge ${
@@ -65,7 +64,7 @@ const InvoicesPage = {
                     </td>
                     <td>
                       ${inv.status !== 'paid' ? `
-                        <button class="btn btn-ghost btn-sm" 
+                        <button class="btn btn-ghost btn-sm"
                                 onclick="InvoicesPage.markPaid('${inv._id}')">Mark Paid</button>
                       ` : ''}
                       <button class="btn btn-ghost btn-sm text-red"
@@ -97,30 +96,51 @@ const InvoicesPage = {
         `;
       } else {
         Toast.error('Failed to load invoices');
-        container.innerHTML = '<div class="card"><p class="text-muted">Failed to load invoices.</p></div>';
+        container.innerHTML = '<div class="card"><p class="text-muted" style="padding:16px;">Failed to load invoices.</p></div>';
       }
     }
   },
 
   showCreateModal() {
+    // FIX: match exactly what invoiceController.createInvoice expects:
+    // clientName, clientEmail, items (array), vatRate, dueDate, notes
     const content = `
       <div class="form-group">
-        <label>Client Name</label>
-        <input type="text" id="invClient" class="form-input" placeholder="Client name">
+        <label>Client Name <span style="color:var(--color-danger)">*</span></label>
+        <input type="text" id="invClient" class="form-input" placeholder="Client or company name">
       </div>
       <div class="form-group">
-        <label>Amount (${FlowSmart.state.currency})</label>
-        <input type="number" id="invAmount" class="form-input" min="0" step="0.01">
+        <label>Client Email <span style="color:var(--color-danger)">*</span></label>
+        <input type="email" id="invEmail" class="form-input" placeholder="client@email.com">
       </div>
       <div class="form-group">
-        <label>Due Date</label>
-        <input type="date" id="invDueDate" class="form-input" 
-               value="${dayjs().add(14, 'day').format('YYYY-MM-DD')}">
+        <label>Item Description <span style="color:var(--color-danger)">*</span></label>
+        <input type="text" id="invDesc" class="form-input" placeholder="Services rendered">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="invQty" class="form-input" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>Unit Price (${FlowSmart.state.currency})</label>
+          <input type="number" id="invPrice" class="form-input" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label>VAT Rate (%)</label>
+          <input type="number" id="invVat" class="form-input" value="0" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="invDueDate" class="form-input"
+                 value="${dayjs().add(14, 'day').format('YYYY-MM-DD')}">
+        </div>
       </div>
       <div class="form-group">
-        <label>Description</label>
-        <textarea id="invDescription" class="form-textarea" rows="3" 
-                  placeholder="Services rendered..."></textarea>
+        <label>Notes (optional)</label>
+        <textarea id="invNotes" class="form-textarea" rows="2" placeholder="Payment terms, bank details..."></textarea>
       </div>
     `;
 
@@ -133,18 +153,28 @@ const InvoicesPage = {
 
     modal.querySelector('.modal-cancel').addEventListener('click', () => Modal.close());
     modal.querySelector('.modal-save').addEventListener('click', async () => {
-      const data = {
-        clientName: document.getElementById('invClient').value.trim(),
-        total: parseFloat(document.getElementById('invAmount').value),
-        dueDate: document.getElementById('invDueDate').value,
-        description: document.getElementById('invDescription').value,
-        currency: FlowSmart.state.currency,
-      };
+      const clientName = document.getElementById('invClient').value.trim();
+      const clientEmail = document.getElementById('invEmail').value.trim();
+      const description = document.getElementById('invDesc').value.trim();
+      const quantity = parseInt(document.getElementById('invQty').value) || 1;
+      const unitPrice = parseFloat(document.getElementById('invPrice').value) || 0;
+      const vatRate = parseFloat(document.getElementById('invVat').value) || 0;
+      const dueDate = document.getElementById('invDueDate').value;
+      const notes = document.getElementById('invNotes').value.trim();
 
-      if (!data.clientName || !data.total) {
-        Toast.error('Client name and amount are required');
+      if (!clientName || !clientEmail || !description || !unitPrice) {
+        Toast.error('Client name, email, description, and price are required');
         return;
       }
+
+      const data = {
+        clientName,
+        clientEmail,
+        items: [{ description, quantity, unitPrice }],
+        vatRate,
+        dueDate,
+        notes,
+      };
 
       try {
         await api.createInvoice(data);
